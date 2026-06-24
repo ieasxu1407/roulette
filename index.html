@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>돌림판</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body{
+    background:#f3f3f3;
+}
+
+.wheel-container{
+    position:relative;
+    width:90vw;
+    max-width:700px;
+    margin:auto;
+}
+
+canvas{
+    width:100%;
+    background:white;
+    border-radius:50%;
+    box-shadow:0 0 15px rgba(0,0,0,.2);
+}
+
+.pointer{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translateY(-50%);
+
+    width:0;
+    height:0;
+
+    border-top:20px solid transparent;
+    border-bottom:20px solid transparent;
+    border-left:55px solid red;
+
+    z-index:10;
+}
+
+.centerDot{
+    position:absolute;
+    top:50%;
+    left:50%;
+
+    width:50px;
+    height:50px;
+
+    background:white;
+    border-radius:50%;
+
+    transform:translate(-50%,-50%);
+    z-index:5;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container py-4 text-center">
+
+    <div class="wheel-container">
+
+        <div class="pointer"></div>
+
+        <canvas id="wheel"
+                width="700"
+                height="700">
+        </canvas>
+
+        <div class="centerDot"></div>
+
+    </div>
+
+    <div class="mt-4">
+
+        <button class="btn btn-primary btn-lg"
+                onclick="spinWheel()">
+            시작
+        </button>
+
+        <button class="btn btn-danger"
+                onclick="resetWheel()">
+            초기화
+        </button>
+
+    </div>
+
+    <div class="mt-3">
+        <button class="btn btn-outline-danger"
+                onclick="hideWinner()">
+            당첨 항목 숨기기
+        </button>
+    </div>
+
+    <div id="result"
+         class="alert alert-info mt-3">
+         결과가 여기에 표시됩니다.
+    </div>
+
+    <textarea id="items"
+              class="form-control mt-3"
+              rows="10">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12</textarea>
+
+    <button class="btn btn-success mt-3"
+            onclick="updateItems()">
+        항목 적용
+    </button>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+let items = [
+"1","2","3","4","5","6",
+"7","8","9","10","11","12"
+];
+
+let winnerIndex = -1;
+let rotation = 0;
+
+const colors = [
+"#90EE90",
+"#E8D6B0",
+"#C996D0",
+"#4A6BD9",
+"#F47D72"
+];
+
+function drawWheel(){
+
+    ctx.clearRect(0,0,700,700);
+
+    let cx = 350;
+    let cy = 350;
+    let r = 330;
+
+    let angle = 2*Math.PI/items.length;
+
+    items.forEach((item,i)=>{
+
+        let start = i*angle;
+        let end = start+angle;
+
+        ctx.beginPath();
+        ctx.moveTo(cx,cy);
+        ctx.arc(cx,cy,r,start,end);
+        ctx.closePath();
+
+        ctx.fillStyle =
+            colors[i%colors.length];
+
+        ctx.fill();
+
+        ctx.strokeStyle="#ddd";
+        ctx.stroke();
+
+        ctx.save();
+
+        ctx.translate(cx,cy);
+
+        ctx.rotate(start+angle/2);
+
+        ctx.fillStyle="#000";
+        ctx.font="40px Arial";
+
+        ctx.textAlign="right";
+
+        ctx.fillText(
+            item,
+            r-30,
+            15
+        );
+
+        ctx.restore();
+    });
+
+}
+
+function updateItems(){
+
+    let text =
+        document.getElementById("items")
+        .value
+        .trim();
+
+    items =
+        text.split("\n")
+        .filter(v=>v.trim());
+
+    drawWheel();
+}
+
+function spinWheel(){
+
+    if(items.length<2){
+        alert("항목 2개 이상 필요");
+        return;
+    }
+
+    winnerIndex =
+        Math.floor(
+            Math.random()*items.length
+        );
+
+    let segment =
+        360/items.length;
+
+    let target =
+        360*8 +
+        (360 - winnerIndex*segment);
+
+    rotation += target;
+
+    canvas.style.transition =
+        "transform 5s cubic-bezier(.17,.67,.15,1)";
+
+    canvas.style.transform =
+        `rotate(${rotation}deg)`;
+
+    setTimeout(()=>{
+
+        document.getElementById("result")
+        .innerHTML =
+        `<b>🎉 당첨 : ${items[winnerIndex]}</b>`;
+
+    },5000);
+}
+
+function hideWinner(){
+
+    if(winnerIndex<0) return;
+
+    items.splice(winnerIndex,1);
+
+    document.getElementById("items")
+    .value = items.join("\n");
+
+    winnerIndex=-1;
+
+    drawWheel();
+
+    document.getElementById("result")
+    .innerHTML =
+    "당첨 항목 숨김 완료";
+}
+
+function resetWheel(){
+
+    items = [
+    "1","2","3","4","5","6",
+    "7","8","9","10","11","12"
+    ];
+
+    document.getElementById("items")
+    .value =
+    items.join("\n");
+
+    rotation=0;
+
+    canvas.style.transition="none";
+    canvas.style.transform="rotate(0deg)";
+
+    drawWheel();
+
+    document.getElementById("result")
+    .innerHTML =
+    "초기화 완료";
+}
+
+drawWheel();
+
+</script>
+
+</body>
+</html>
